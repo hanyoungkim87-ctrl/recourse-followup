@@ -1,37 +1,13 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Explanatory Recommender Systems Prototype</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RS prototype v4</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="shell">
-    <header class="topbar">
-      <div>
-        <h1>Explanatory Recommender Systems Prototype</h1>
-        <p class="sub">Original USB and wine conditions are preserved. Follow-up conditions use the same inference-based RS flow and compare expressive versus corrective recourse.</p>
-      </div>
-      <button id="resetBtn" class="secondary small">Reset</button>
-    </header>
-    <main id="app"></main>
-  </div>
-
-  <div id="modalBackdrop" class="modal-backdrop hidden" aria-hidden="true">
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-      <div class="modal-header">
-        <h2 id="modalTitle">Review or correct preference interpretation</h2>
-        <button id="closeModalBtn" class="icon-btn" aria-label="Close">×</button>
-      </div>
-      <div id="modalBody" class="modal-body"></div>
-      <div class="modal-actions">
-        <button id="cancelModalBtn" class="secondary">Cancel</button>
-        <button id="saveModalBtn">Save</button>
-      </div>
-    </div>
-  </div>
-
+  <div id="app"></div>
   <script src="app.js"></script>
 </body>
 </html>
