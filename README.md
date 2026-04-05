@@ -1,37 +1,34 @@
-# Explanatory Recommender Systems Prototype
+# Explanatory Recommender Systems Prototype (v2)
 
-This static prototype preserves the original USB and wine recommendation flows and adds a follow-up comparison between:
+This package preserves the original USB and wine study interfaces and adds two
+follow-up recourse conditions:
 
-- **Outcome flexibility**: users can ask to see other recommendations, but the system's interpretation remains unchanged.
-- **Process recourse**: users can correct the system's interpretation, and the explanation plus recommendations update.
+- Expressive recourse
+- Corrective recourse
 
 ## Files
-- `index.html` — main prototype
-- `style.css` — styling
-- `app.js` — logic and condition handling
+- `index.html` – entry point
+- `style.css` – styles
+- `app.js` – prototype logic
+- `README.md` – this file
 
 ## URL parameters
-You can deep-link to a condition using query parameters:
-
-- `product=wine` or `product=usb`
-- `condition=explanation|steering|recourse|both|outcome|process`
+You can deep-link directly to a product and condition using query params.
 
 Examples:
-- `index.html?product=wine&condition=process`
-- `index.html?product=usb&condition=both`
-
-## Included conditions
-### Original study conditions
-- explanation only
-- steering control
-- recourse
-- steering + recourse
-
-### Follow-up prototype
-- outcome flexibility
-- process recourse
+- `?product=wine&condition=corrective`
+- `?product=usb&condition=expressive`
+- `?product=usb&condition=both`
 
 ## Notes
-- This is a **static front-end prototype** for piloting and handoff.
-- It logs participant interactions client-side and allows JSON export.
-- No backend or database is included.
+- Original conditions kept:
+  - explanation
+  - steering
+  - recourse
+  - both
+- Follow-up conditions added:
+  - expressive
+  - corrective
+
+The prototype is front-end only. It logs interactions in memory and lets you
+download a session JSON at the end.
