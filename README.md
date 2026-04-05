@@ -1,34 +1,13 @@
-# Explanatory Recommender Systems Prototype (v2)
+This prototype preserves the original USB and wine conditions from the paper and adds two follow-up conditions:
+- expressive recourse
+- corrective recourse
 
-This package preserves the original USB and wine study interfaces and adds two
-follow-up recourse conditions:
+How to use:
+1. Open index.html in a browser.
+2. Choose product context and condition.
+3. Proceed through the prototype.
+4. Download the JSON session log at the end if needed.
 
-- Expressive recourse
-- Corrective recourse
-
-## Files
-- `index.html` – entry point
-- `style.css` – styles
-- `app.js` – prototype logic
-- `README.md` – this file
-
-## URL parameters
-You can deep-link directly to a product and condition using query params.
-
-Examples:
-- `?product=wine&condition=corrective`
-- `?product=usb&condition=expressive`
-- `?product=usb&condition=both`
-
-## Notes
-- Original conditions kept:
-  - explanation
-  - steering
-  - recourse
-  - both
-- Follow-up conditions added:
-  - expressive
-  - corrective
-
-The prototype is front-end only. It logs interactions in memory and lets you
-download a session JSON at the end.
+Deep-link examples:
+- ?product=wine&condition=corrective
+- ?product=usb&condition=expressive
