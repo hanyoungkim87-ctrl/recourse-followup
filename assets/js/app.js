@@ -247,8 +247,6 @@ function renderResults(){
 
   const recBlock = document.getElementById('recourseBlock');
   const q = document.getElementById('recourseQuestion');
-  const yesBtn = document.getElementById('btnRecourseYes');
-  const noBtn = document.getElementById('btnRecourseNo');
   const status = document.getElementById('recourseStatus');
   const expPanel = document.getElementById('expressivePanel');
   const corPanel = document.getElementById('correctivePanel');
@@ -267,77 +265,78 @@ function renderResults(){
 
   recBlock.classList.remove('hidden');
   document.getElementById('btnContinue').disabled = !state.recourseDone;
-  q.textContent = 'Does this sound like you?';
-  yesBtn.textContent = 'Yes, this sounds right';
-  noBtn.textContent = 'Not quite';
 
   if(state.cond === 'expressive'){
-    yesBtn.onclick = ()=>{
+    q.textContent = 'Before continuing, tell us what feels most off about this recommendation.';
+    expPanel.classList.remove('hidden');
+    expPanel.innerHTML = `
+      <div class="repair-header">
+        <h4>What feels most off?</h4>
+        <p class="muted">Choose the issue that best captures what feels slightly off. We’ll refresh the recommendation before you continue.</p>
+      </div>
+      <div class="option-grid">
+        ${products[state.product].expressiveOptions.map(([k,label])=>`<div class="option-card ${state.expressiveReason===k?'active':''}" data-exp="${k}">${label}</div>`).join('')}
+      </div>
+      <div class="repair-footer"><button id="applyExpressive" class="btn btn-primary" ${state.expressiveReason?'':'disabled'}>Refresh recommendation</button></div>`;
+    document.querySelectorAll('[data-exp]').forEach(el=>el.onclick=()=>{ state.expressiveReason = el.dataset.exp; renderResults(); });
+    const apply = document.getElementById('applyExpressive');
+    if(apply) apply.onclick = ()=>{
+      refreshAfterExpressive(state.expressiveReason);
       state.recourseDone = true;
-      log('expressive_yes');
+      log('expressive_recourse',{reason:state.expressiveReason});
       renderResults();
+      requestAnimationFrame(()=>{
+        const el = document.getElementById('recourseStatus');
+        el.textContent = 'Thanks — we refreshed the recommendation.';
+        el.classList.remove('hidden');
+      });
     };
-    noBtn.onclick = ()=>{
-      expPanel.classList.remove('hidden');
-      expPanel.innerHTML = `
-        <div class="repair-header">
-          <h4>What feels slightly off?</h4>
-          <p class="muted">Tell us what feels off, and we’ll refresh the recommendation.</p>
-        </div>
-        <div class="option-grid">
-          ${products[state.product].expressiveOptions.map(([k,label])=>`<div class="option-card ${state.expressiveReason===k?'active':''}" data-exp="${k}">${label}</div>`).join('')}
-        </div>
-        <div class="repair-footer"><button id="applyExpressive" class="btn btn-primary" ${state.expressiveReason?'':'disabled'}>Refresh recommendation</button></div>`;
-      document.querySelectorAll('[data-exp]').forEach(el=>el.onclick=()=>{ state.expressiveReason = el.dataset.exp; renderResults(); });
-      const apply = document.getElementById('applyExpressive');
-      if(apply) apply.onclick = ()=>{
-        refreshAfterExpressive(state.expressiveReason);
-        state.recourseDone = true;
-        log('expressive_recourse',{reason:state.expressiveReason});
-        renderResults();
-        requestAnimationFrame(()=>{
-          const el = document.getElementById('recourseStatus');
-          el.textContent = 'Thanks — we refreshed the recommendation.';
-          el.classList.remove('hidden');
-        });
-      };
-    };
+    if(state.recourseDone){
+      status.textContent = 'Thanks — we refreshed the recommendation.';
+      status.classList.remove('hidden');
+    }
   }
 
   if(state.cond === 'corrective'){
-    yesBtn.onclick = ()=>{
-      state.recourseDone = true;
-      log('corrective_yes');
-      renderResults();
-    };
-    noBtn.onclick = ()=>{
-      corPanel.classList.remove('hidden');
-      corPanel.innerHTML = `
-        <div class="repair-header">
-          <h4>Refine this understanding</h4>
-          <p class="muted">If needed, you can revise how the system understood your preferences.</p>
-        </div>
-        <div class="profile-grid">
-          ${products[state.product].correctiveFields.map(field=>`
-            <div class="field">
-              <label class="label" for="field_${field.key}">${field.label}</label>
-              <select id="field_${field.key}" class="select">${field.options.map(([v,l])=>`<option value="${v}" ${state.correctiveValues[field.key]===v?'selected':''}>${l}</option>`).join('')}</select>
-            </div>`).join('')}
-        </div>
-        <div class="repair-footer"><button id="applyCorrective" class="btn btn-primary">Update recommendation</button></div>`;
-      document.getElementById('applyCorrective').onclick = ()=>{
-        products[state.product].correctiveFields.forEach(f=>{ state.correctiveValues[f.key] = document.getElementById(`field_${f.key}`).value; });
-        refreshAfterCorrective();
-        state.recourseDone = true;
-        log('corrective_recourse',{profile:{...state.correctiveValues}});
+    q.textContent = "Before continuing, review the system's understanding and correct anything that feels off.";
+    corPanel.classList.remove('hidden');
+    const changed = products[state.product].correctiveFields.some(f => state.correctiveValues[f.key] !== state.inference[f.key]);
+    corPanel.innerHTML = `
+      <div class="repair-header">
+        <h4>Refine this understanding</h4>
+        <p class="muted">Adjust the profile below if it does not fully reflect your preferences. Your recommendation will refresh after you update it.</p>
+      </div>
+      <div class="profile-grid">
+        ${products[state.product].correctiveFields.map(field=>`
+          <div class="field">
+            <label class="label" for="field_${field.key}">${field.label}</label>
+            <select id="field_${field.key}" class="select">${field.options.map(([v,l])=>`<option value="${v}" ${state.correctiveValues[field.key]===v?'selected':''}>${l}</option>`).join('')}</select>
+          </div>`).join('')}
+      </div>
+      <div class="repair-footer"><button id="applyCorrective" class="btn btn-primary" ${changed ? '' : 'disabled'}>Update recommendation</button></div>`;
+    products[state.product].correctiveFields.forEach(f=>{
+      const el = document.getElementById(`field_${f.key}`);
+      if(el) el.onchange = () => {
+        state.correctiveValues[f.key] = el.value;
         renderResults();
-        requestAnimationFrame(()=>{
-          const el = document.getElementById('recourseStatus');
-          el.textContent = 'Thanks — we updated the recommendation.';
-          el.classList.remove('hidden');
-        });
       };
+    });
+    const apply = document.getElementById('applyCorrective');
+    if(apply) apply.onclick = ()=>{
+      refreshAfterCorrective();
+      state.recourseDone = true;
+      log('corrective_recourse',{profile:{...state.correctiveValues}});
+      renderResults();
+      requestAnimationFrame(()=>{
+        const el = document.getElementById('recourseStatus');
+        el.textContent = 'Thanks — we updated our understanding and refreshed the recommendation.';
+        el.classList.remove('hidden');
+      });
     };
+    if(state.recourseDone){
+      status.textContent = 'Thanks — we updated our understanding and refreshed the recommendation.';
+      status.classList.remove('hidden');
+    }
   }
 }
 
