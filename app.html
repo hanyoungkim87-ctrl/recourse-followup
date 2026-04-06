@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Recommender follow-up demo</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+  <div id="app" class="app">
+    <header class="topbar">
+      <div class="brand">
+        <span class="dot" aria-hidden="true"></span>
+        <span id="brandTitle" class="brand-title">Recommendations</span>
+      </div>
+    </header>
+
+    <main class="main">
+      <section class="card landing" id="landing">
+        <h1 id="landingTitle">Recommendations</h1>
+        <p class="muted">Answer a few quick questions to get personalized suggestions.</p>
+
+        <div id="testControls" class="cond-picker" aria-label="Testing controls">
+          <label class="label" for="productSelect">Product</label>
+          <select id="productSelect" class="select">
+            <option value="wine">Wine</option>
+            <option value="usb">USB</option>
+          </select>
+
+          <label class="label" for="condSelect">Follow-up condition</label>
+          <select id="condSelect" class="select">
+            <option value="none">No recourse</option>
+            <option value="expressive">Expressive recourse</option>
+            <option value="corrective">Corrective recourse</option>
+          </select>
+          <p class="tiny muted">For testing only. In the experiment, these can be set via URL parameters.</p>
+        </div>
+
+        <div class="actions">
+          <button id="btnStart" class="btn btn-primary">Start</button>
+        </div>
+      </section>
+    </main>
+
+    <div id="backdrop" class="backdrop hidden" aria-hidden="true"></div>
+
+    <section id="modalQuiz" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="quizTitle">
+      <div class="modal-shell">
+        <div class="modal-header">
+          <h2 id="quizTitle">Quick preference survey</h2>
+          <button class="icon-btn" id="quizClose" aria-label="Close">×</button>
+        </div>
+        <div class="modal-body">
+          <div id="quizProgress" class="progress" aria-label="Progress">
+            <div id="quizProgressBar" class="progress-bar" style="width:0%"></div>
+          </div>
+          <div id="quizStep" class="steps"></div>
+        </div>
+        <div class="modal-footer">
+          <button id="quizBack" class="btn btn-secondary">Back</button>
+          <button id="quizNext" class="btn btn-primary">Next</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="modalResults" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="resultsTitle">
+      <div class="modal-shell modal-wide">
+        <div class="modal-header">
+          <h2 id="resultsTitle">Recommended for you</h2>
+          <button class="icon-btn" id="resultsClose" aria-label="Close">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="two-col">
+            <div class="explain" id="profileBox">
+              <div class="section-label">How we understood you</div>
+              <p id="profileSummary" class="reasoning"></p>
+              <div id="profileTags" class="tag-row"></div>
+              <div id="correctiveAnchor"></div>
+            </div>
+
+            <div class="explain" id="whyBox">
+              <div class="section-label">Why these recommendations?</div>
+              <p id="whyText" class="reasoning"></p>
+            </div>
+          </div>
+
+          <div class="recs-wrap">
+            <div id="recsGrid" class="recs"></div>
+            <div id="expressiveAnchor"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="btnDownload" class="btn btn-secondary">Download log</button>
+          <button id="btnContinue" class="btn btn-primary" disabled>Continue</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="modalDone" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="doneTitle">
+      <div class="modal-shell">
+        <div class="modal-header"><h2 id="doneTitle">All set</h2></div>
+        <div class="modal-body">
+          <div class="callout">
+            <p class="callout-text">You can now return to the survey.</p>
+          </div>
+          <pre id="logPreview" class="jsonbox"></pre>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>
