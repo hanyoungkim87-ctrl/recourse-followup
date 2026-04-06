@@ -1,3 +1,4 @@
+
 const state = {
   product: 'wine',
   cond: 'none',
@@ -5,10 +6,11 @@ const state = {
   qIndex: 0,
   answers: {},
   inference: null,
+  correctiveValues: {},
   recs: [],
   selected: null,
-  expressiveReasons: [],
-  correctiveValues: {},
+  expressiveReason: '',
+  recourseDone: false,
   log: []
 };
 
@@ -41,17 +43,16 @@ const products = {
       {id:'w5', name:'Reserve Merlot', price:'$31', cue:'Round red · special meal', tags:{persona:'classic', feel:'bold', spend:'premium'}},
       {id:'w6', name:'Garden White Blend', price:'$16', cue:'Soft white · casual', tags:{persona:'easy', feel:'light', spend:'value'}}
     ],
-    expressivePrompt: 'What feels a little off about these suggestions?',
     expressiveOptions: [
-      ['occasion','They do not feel quite right for the occasion.'],
-      ['price','They feel a bit outside what I had in mind on price.'],
-      ['taste','They do not quite match my usual taste.'],
-      ['intensity','They feel bolder or lighter than I expected.']
+      ['adventurous','A bit more adventurous than I am'],
+      ['classic','More traditional than I would usually choose'],
+      ['premium','More premium than I had in mind'],
+      ['bold','A little bolder than my usual taste']
     ],
     correctiveFields: [
-      {key:'persona', label:'Which style sounds more like you?', options:[['classic','Classic and familiar'],['adventurous','More adventurous'],['easy','Easygoing and approachable']]},
-      {key:'feel', label:'What overall feel sounds closer?', options:[['light','Lighter and easier'],['balanced','Balanced'],['bold','Bolder and more structured']]},
-      {key:'spend', label:'How do you want us to think about price?', options:[['value','Value-oriented'],['balanced','Balanced'],['premium','Premium-leaning']]}
+      {key:'persona', label:'Which overall style sounds more like you?', options:[['classic','More classic and familiar'],['adventurous','More exploratory and adventurous'],['easy','More easygoing and approachable']]},
+      {key:'feel', label:'What overall feel sounds closer?', options:[['light','Lighter and easy-drinking'],['balanced','Balanced'],['bold','Bolder and more structured']]},
+      {key:'spend', label:'How should we think about price?', options:[['value','Value-oriented'],['balanced','Balanced'],['premium','More premium-leaning']]}
     ]
   },
   usb: {
@@ -82,17 +83,16 @@ const products = {
       {id:'u5', name:'SpeedKey 64GB', price:'$28', cue:'Fast and compact', tags:{persona:'fast', feel:'steady', spend:'premium'}},
       {id:'u6', name:'ArchivePro 256GB', price:'$27', cue:'Capacity-minded · value', tags:{persona:'capacity', feel:'expanded', spend:'balanced'}}
     ],
-    expressivePrompt: 'What feels a little off about these suggestions?',
     expressiveOptions: [
-      ['usage','They do not feel like the right fit for my use.'],
-      ['price','They feel a bit outside what I had in mind on price.'],
-      ['style','They do not quite match my usual preference.'],
-      ['intensity','They feel more advanced or more limited than I expected.']
+      ['fast','A bit more performance-focused than I am'],
+      ['capacity','More storage-focused than I usually need'],
+      ['premium','More premium than I had in mind'],
+      ['expanded','A bit more advanced than I was looking for']
     ],
     correctiveFields: [
-      {key:'persona', label:'Which style sounds more like you?', options:[['practical','Practical and everyday'],['fast','Performance-oriented'],['capacity','Capacity-focused']]},
-      {key:'feel', label:'What overall fit sounds closer?', options:[['steady','Straightforward and reliable'],['balanced','Balanced'],['expanded','More specialized or extended']]},
-      {key:'spend', label:'How should we think about price?', options:[['value','Value-oriented'],['balanced','Balanced'],['premium','Premium-leaning']]}
+      {key:'persona', label:'Which overall style sounds more like you?', options:[['practical','More practical and everyday'],['fast','More performance-focused'],['capacity','More capacity-focused']]},
+      {key:'feel', label:'What overall fit sounds closer?', options:[['steady','Straightforward and reliable'],['balanced','Balanced'],['expanded','More advanced or extended']]},
+      {key:'spend', label:'How should we think about price?', options:[['value','Value-oriented'],['balanced','Balanced'],['premium','More premium-leaning']]}
     ]
   }
 };
@@ -104,18 +104,15 @@ function parseParams(){
   if(products[product]) state.product = product;
   if(['none','expressive','corrective'].includes(cond)) state.cond = cond;
 }
-
 function setParamState(){
   const p = new URLSearchParams(location.search);
   p.set('product', state.product);
   p.set('cond', state.cond);
   history.replaceState({}, '', 'app.html?' + p.toString());
 }
-
 function log(type, detail={}){ state.log.push({type, detail, t:new Date().toISOString()}); }
 
 function inferProfile(){
-  const cfg = products[state.product];
   if(state.product === 'wine'){
     const persona = state.answers.style || 'classic';
     const spend = state.answers.price || 'balanced';
@@ -136,89 +133,75 @@ function inferProfile(){
 
 function profileText(inf){
   if(state.product === 'wine'){
-    const personaText = {classic:'a classic-leaning wine shopper', adventurous:'a more adventurous wine shopper', easy:'an easygoing wine shopper'}[inf.persona];
-    const feelText = {light:'lighter, easy-drinking choices', balanced:'balanced choices', bold:'bolder, more structured choices'}[inf.feel];
+    const personaText = {
+      classic:'someone who tends to lean toward classic, familiar bottles',
+      adventurous:'someone who seems a bit more exploratory and open to bolder choices',
+      easy:'someone who prefers easygoing, approachable options'
+    }[inf.persona];
+    const feelText = {light:'lighter and easy-drinking', balanced:'balanced', bold:'bolder and more structured'}[inf.feel];
     const spendText = {value:'good value', balanced:'a balanced price–quality tradeoff', premium:'something a bit more premium'}[inf.spend];
-    return `Based on your inputs, we inferred that you seem to be ${personaText} who tends to prefer ${feelText} and values ${spendText}.`;
+    return `Based on your inputs, we inferred that you seem to be ${personaText}, with a preference for ${feelText} wines and ${spendText}.`;
   }
-  const personaText = {practical:'a practical everyday user', fast:'a performance-oriented user', capacity:'a capacity-focused user'}[inf.persona];
-  const feelText = {steady:'straightforward, reliable options', balanced:'balanced options', expanded:'more extended or specialized options'}[inf.feel];
+  const personaText = {
+    practical:'someone who values practical, everyday choices',
+    fast:'someone who leans toward faster, more performance-oriented options',
+    capacity:'someone who tends to prioritize storage capacity'
+  }[inf.persona];
+  const feelText = {steady:'straightforward and reliable', balanced:'balanced', expanded:'more advanced or extended-use'}[inf.feel];
   const spendText = {value:'good value', balanced:'a balanced price–quality tradeoff', premium:'something more premium when justified'}[inf.spend];
-  return `Based on your inputs, we inferred that you seem to be ${personaText} who tends to prefer ${feelText} and values ${spendText}.`;
+  return `Based on your inputs, we inferred that you seem to be ${personaText}, with a preference for ${feelText} options and ${spendText}.`;
 }
-
-function profileTags(inf){
-  return [inf.persona, inf.feel, inf.spend].map(v=>`<span class="tag">${labelize(v)}</span>`).join('');
-}
-
-function whyText(){
-  return state.product==='wine'
-    ? 'These recommendations reflect the style, feel, and price orientation that the system inferred from your answers.'
-    : 'These recommendations reflect the usage style, overall fit, and price orientation that the system inferred from your answers.';
-}
-
 function labelize(v){
   const map = {
-    classic:'Classic', adventurous:'Adventurous', easy:'Easygoing',
-    light:'Lighter feel', balanced:'Balanced', bold:'Bolder feel',
-    value:'Value-oriented', premium:'Premium-leaning',
-    practical:'Practical', fast:'Performance-oriented', capacity:'Capacity-focused',
-    steady:'Straightforward fit', expanded:'Extended fit'
+    classic:'Classic', adventurous:'Explorer', easy:'Easygoing', light:'Lighter feel', balanced:'Balanced', bold:'Bolder feel', value:'Value-oriented', premium:'Premium-leaning',
+    practical:'Practical', fast:'Performance-focused', capacity:'Capacity-focused', steady:'Straightforward fit', expanded:'Advanced fit'
   };
   return map[v] || v;
 }
-
+function profileTags(inf){ return [inf.persona, inf.feel, inf.spend].map(v=>`<span class="tag">${labelize(v)}</span>`).join(''); }
+function whyText(){
+  return state.product==='wine'
+    ? 'These recommendations reflect the style and price cues the system inferred from your answers.'
+    : 'These recommendations reflect the usage style and price cues the system inferred from your answers.';
+}
+function scoreFor(item, inf){
+  let score=0;
+  if(item.tags.persona===inf.persona) score += 3;
+  if(item.tags.feel===inf.feel) score += 2;
+  if(item.tags.spend===inf.spend) score += 1;
+  return score;
+}
 function recommend(inf){
-  const items = products[state.product].catalog.map(item=>{
-    let score = 0;
-    if(item.tags.persona === inf.persona) score += 3;
-    if(item.tags.feel === inf.feel) score += 2;
-    if(item.tags.spend === inf.spend) score += 1;
-    return {...item, score};
-  }).sort((a,b)=>b.score-a.score || a.name.localeCompare(b.name));
+  const items = products[state.product].catalog.map(item=>({ ...item, score: scoreFor(item, inf) }))
+    .sort((a,b)=>b.score-a.score || a.name.localeCompare(b.name));
   state.recs = items.slice(0,4);
 }
-
 function refreshAfterExpressive(reason){
-  const all = products[state.product].catalog.map(item=>({ ...item, score: item.score || 0 }));
-  const baseInf = state.inference;
-  const rescored = all.map(item=>{
-    let score = 0;
-    if(item.tags.persona === baseInf.persona) score += 3;
-    if(item.tags.feel === baseInf.feel) score += 2;
-    if(item.tags.spend === baseInf.spend) score += 1;
-    if(reason === 'price' && item.tags.spend !== 'value') score -= 3;
-    if(reason === 'occasion' && item.tags.feel === 'bold') score -= 2;
-    if(reason === 'taste' && item.tags.persona === baseInf.persona) score -= 1;
-    if(reason === 'intensity' && item.tags.feel === 'bold') score -= 3;
-    if(reason === 'usage' && item.tags.feel === 'expanded') score -= 2;
-    if(reason === 'style' && item.tags.persona === baseInf.persona) score -= 1;
+  const inf = state.inference;
+  const rescored = products[state.product].catalog.map(item=>{
+    let score = scoreFor(item, inf);
+    if(reason === 'premium' && item.tags.spend === 'premium') score -= 3;
+    if(reason === 'bold' && (item.tags.feel === 'bold' || item.tags.feel === 'expanded')) score -= 3;
+    if(reason === 'adventurous' && item.tags.persona === 'adventurous') score -= 2;
+    if(reason === 'classic' && item.tags.persona === 'classic') score -= 2;
+    if(reason === 'fast' && item.tags.persona === 'fast') score -= 2;
+    if(reason === 'capacity' && item.tags.persona === 'capacity') score -= 2;
     return {...item, score};
   }).sort((a,b)=>b.score-a.score || a.name.localeCompare(b.name));
   state.recs = rescored.slice(0,4);
 }
-
-function refreshAfterCorrective(){
-  recommend(state.correctiveValues);
-}
+function refreshAfterCorrective(){ recommend(state.correctiveValues); }
 
 function render(){
   document.getElementById('brandTitle').textContent = products[state.product].brand;
   document.getElementById('landingTitle').textContent = products[state.product].title;
   document.getElementById('productSelect').value = state.product;
   document.getElementById('condSelect').value = state.cond;
-
-  const landing = document.getElementById('landing');
-  const backdrop = document.getElementById('backdrop');
-  const quiz = document.getElementById('modalQuiz');
-  const results = document.getElementById('modalResults');
-  const done = document.getElementById('modalDone');
-  landing.classList.toggle('hidden', state.page !== 'landing');
-  backdrop.classList.toggle('hidden', state.page === 'landing');
-  quiz.classList.toggle('hidden', state.page !== 'quiz');
-  results.classList.toggle('hidden', state.page !== 'results');
-  done.classList.toggle('hidden', state.page !== 'done');
-
+  document.getElementById('landing').classList.toggle('hidden', state.page !== 'landing');
+  document.getElementById('backdrop').classList.toggle('hidden', state.page === 'landing');
+  document.getElementById('modalQuiz').classList.toggle('hidden', state.page !== 'quiz');
+  document.getElementById('modalResults').classList.toggle('hidden', state.page !== 'results');
+  document.getElementById('modalDone').classList.toggle('hidden', state.page !== 'done');
   if(state.page === 'quiz') renderQuiz();
   if(state.page === 'results') renderResults();
   if(state.page === 'done') renderDone();
@@ -239,98 +222,146 @@ function renderQuiz(){
           <label class="choice ${answered===value?'selected':''}" data-value="${value}">
             <input type="radio" name="q" ${answered===value?'checked':''} />
             <span>${label}</span>
-          </label>
-        `).join('')}
+          </label>`).join('')}
       </div>
     </div>`;
-  document.querySelectorAll('.choice').forEach(el=>el.onclick=()=>{
-    state.answers[q.key] = el.dataset.value;
-    renderQuiz();
-  });
+  document.querySelectorAll('.choice').forEach(el=>el.onclick=()=>{ state.answers[q.key] = el.dataset.value; renderQuiz(); });
   document.getElementById('quizBack').disabled = state.qIndex===0;
   document.getElementById('quizNext').disabled = !state.answers[q.key];
   document.getElementById('quizNext').textContent = state.qIndex === cfg.questions.length-1 ? 'See recommendations' : 'Next';
 }
 
 function renderResults(){
-  document.getElementById('profileSummary').textContent = profileText(state.correctiveValues);
-  document.getElementById('profileTags').innerHTML = profileTags(state.correctiveValues);
+  const profileForDisplay = state.recourseDone && state.cond === 'corrective' ? state.correctiveValues : state.inference;
+  document.getElementById('profileSummary').textContent = profileText(profileForDisplay);
+  document.getElementById('profileTags').innerHTML = profileTags(profileForDisplay);
   document.getElementById('whyText').textContent = whyText();
+
   document.getElementById('recsGrid').innerHTML = state.recs.map(item=>`
     <div class="product ${state.selected===item.id?'selected':''}">
       <div class="row"><div class="product-title">${item.name}</div><span class="tag">${item.price}</span></div>
       <div class="muted">${item.cue}</div>
       <div class="actions"><button class="btn btn-secondary" data-pick="${item.id}">Choose this</button></div>
     </div>`).join('');
-  document.querySelectorAll('[data-pick]').forEach(btn=>btn.onclick=()=>{
-    state.selected = btn.dataset.pick;
-    document.getElementById('btnContinue').disabled = false;
-    renderResults();
-  });
+  document.querySelectorAll('[data-pick]').forEach(btn=>btn.onclick=()=>{ state.selected = btn.dataset.pick; log('pick',{id:state.selected}); renderResults(); });
 
-  const exp = document.getElementById('expressiveAnchor');
-  const cor = document.getElementById('correctiveAnchor');
-  exp.innerHTML = '';
-  cor.innerHTML = '';
+  const recBlock = document.getElementById('recourseBlock');
+  const q = document.getElementById('recourseQuestion');
+  const yesBtn = document.getElementById('btnRecourseYes');
+  const noBtn = document.getElementById('btnRecourseNo');
+  const status = document.getElementById('recourseStatus');
+  const expPanel = document.getElementById('expressivePanel');
+  const corPanel = document.getElementById('correctivePanel');
+  expPanel.classList.add('hidden');
+  corPanel.classList.add('hidden');
+  expPanel.innerHTML = '';
+  corPanel.innerHTML = '';
+  status.classList.add('hidden');
+  status.textContent = '';
+
+  if(state.cond === 'none'){
+    recBlock.classList.add('hidden');
+    document.getElementById('btnContinue').disabled = false;
+    return;
+  }
+
+  recBlock.classList.remove('hidden');
+  document.getElementById('btnContinue').disabled = !state.recourseDone;
+  q.textContent = 'Does this sound like you?';
+  yesBtn.textContent = 'Yes, this sounds right';
+  noBtn.textContent = 'Not quite';
 
   if(state.cond === 'expressive'){
-    exp.innerHTML = `
-      <div class="rec-box expressive">
-        <h4>Not quite right?</h4>
-        <p class="muted">Tell us what feels a little off, and we’ll refresh the suggestions.</p>
+    yesBtn.onclick = ()=>{
+      state.recourseDone = true;
+      log('expressive_yes');
+      renderResults();
+    };
+    noBtn.onclick = ()=>{
+      expPanel.classList.remove('hidden');
+      expPanel.innerHTML = `
+        <div class="repair-header">
+          <h4>What feels slightly off?</h4>
+          <p class="muted">Tell us what feels off, and we’ll refresh the recommendation.</p>
+        </div>
         <div class="option-grid">
-          ${products[state.product].expressiveOptions.map(([k,label])=>`<div class="option-card ${state.expressiveReasons[0]===k?'active':''}" data-exp="${k}">${label}</div>`).join('')}
+          ${products[state.product].expressiveOptions.map(([k,label])=>`<div class="option-card ${state.expressiveReason===k?'active':''}" data-exp="${k}">${label}</div>`).join('')}
         </div>
-        <div class="repair-footer">
-          <button id="applyExpressive" class="btn btn-primary" ${state.expressiveReasons.length?'':'disabled'}>Refresh recommendation</button>
-        </div>
-        <div id="expStatus" class="status ${state.note?'':'hidden'}">${state.note}</div>
-      </div>`;
-    document.querySelectorAll('[data-exp]').forEach(el=>el.onclick=()=>{
-      state.expressiveReasons=[el.dataset.exp];
-      state.note='';
-      renderResults();
-    });
-    const btn = document.getElementById('applyExpressive');
-    if(btn) btn.onclick=()=>{
-      refreshAfterExpressive(state.expressiveReasons[0]);
-      state.note='Thanks — we’ve refreshed the suggestions based on your feedback.';
-      log('expressive_recourse',{reason:state.expressiveReasons[0]});
-      renderResults();
+        <div class="repair-footer"><button id="applyExpressive" class="btn btn-primary" ${state.expressiveReason?'':'disabled'}>Refresh recommendation</button></div>`;
+      document.querySelectorAll('[data-exp]').forEach(el=>el.onclick=()=>{ state.expressiveReason = el.dataset.exp; renderResults(); });
+      const apply = document.getElementById('applyExpressive');
+      if(apply) apply.onclick = ()=>{
+        refreshAfterExpressive(state.expressiveReason);
+        state.recourseDone = true;
+        log('expressive_recourse',{reason:state.expressiveReason});
+        renderResults();
+        requestAnimationFrame(()=>{
+          const el = document.getElementById('recourseStatus');
+          el.textContent = 'Thanks — we refreshed the recommendation.';
+          el.classList.remove('hidden');
+        });
+      };
     };
   }
 
   if(state.cond === 'corrective'){
-    cor.innerHTML = `
-      <div class="rec-box corrective">
-        <h4>Refine this understanding</h4>
-        <p class="muted">If this summary feels slightly off, you can refine it before continuing.</p>
-        ${products[state.product].correctiveFields.map(field=>`
-          <div class="field">
-            <label class="label" for="field_${field.key}">${field.label}</label>
-            <select id="field_${field.key}">${field.options.map(([v,l])=>`<option value="${v}" ${state.correctiveValues[field.key]===v?'selected':''}>${l}</option>`).join('')}</select>
-          </div>`).join('')}
-        <div class="repair-footer"><button id="applyCorrective" class="btn btn-primary">Update understanding</button></div>
-        <div id="corStatus" class="status ${state.note?'':'hidden'}">${state.note}</div>
-      </div>`;
-    document.getElementById('applyCorrective').onclick=()=>{
-      products[state.product].correctiveFields.forEach(f=>{
-        state.correctiveValues[f.key] = document.getElementById(`field_${f.key}`).value;
-      });
-      refreshAfterCorrective();
-      state.note='Thanks — we’ve updated how we understand your preferences and refreshed the suggestions.';
-      log('corrective_recourse',{profile:{...state.correctiveValues}});
+    yesBtn.onclick = ()=>{
+      state.recourseDone = true;
+      log('corrective_yes');
       renderResults();
+    };
+    noBtn.onclick = ()=>{
+      corPanel.classList.remove('hidden');
+      corPanel.innerHTML = `
+        <div class="repair-header">
+          <h4>Refine this understanding</h4>
+          <p class="muted">If needed, you can revise how the system understood your preferences.</p>
+        </div>
+        <div class="profile-grid">
+          ${products[state.product].correctiveFields.map(field=>`
+            <div class="field">
+              <label class="label" for="field_${field.key}">${field.label}</label>
+              <select id="field_${field.key}" class="select">${field.options.map(([v,l])=>`<option value="${v}" ${state.correctiveValues[field.key]===v?'selected':''}>${l}</option>`).join('')}</select>
+            </div>`).join('')}
+        </div>
+        <div class="repair-footer"><button id="applyCorrective" class="btn btn-primary">Update recommendation</button></div>`;
+      document.getElementById('applyCorrective').onclick = ()=>{
+        products[state.product].correctiveFields.forEach(f=>{ state.correctiveValues[f.key] = document.getElementById(`field_${f.key}`).value; });
+        refreshAfterCorrective();
+        state.recourseDone = true;
+        log('corrective_recourse',{profile:{...state.correctiveValues}});
+        renderResults();
+        requestAnimationFrame(()=>{
+          const el = document.getElementById('recourseStatus');
+          el.textContent = 'Thanks — we updated the recommendation.';
+          el.classList.remove('hidden');
+        });
+      };
     };
   }
 }
 
 function renderDone(){
-  document.getElementById('logPreview').textContent = JSON.stringify({product:state.product, condition:state.cond, answers:state.answers, inference:state.inference, finalProfile:state.correctiveValues, selected:state.selected, log:state.log}, null, 2);
+  document.getElementById('logPreview').textContent = JSON.stringify({
+    product: state.product,
+    condition: state.cond,
+    answers: state.answers,
+    inference: state.inference,
+    finalProfile: state.recourseDone && state.cond === 'corrective' ? state.correctiveValues : state.inference,
+    selected: state.selected,
+    log: state.log
+  }, null, 2);
 }
-
 function downloadLog(){
-  const payload = {product:state.product, condition:state.cond, answers:state.answers, inference:state.inference, finalProfile:state.correctiveValues, selected:state.selected, log:state.log};
+  const payload = {
+    product: state.product,
+    condition: state.cond,
+    answers: state.answers,
+    inference: state.inference,
+    finalProfile: state.recourseDone && state.cond === 'corrective' ? state.correctiveValues : state.inference,
+    selected: state.selected,
+    log: state.log
+  };
   const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -345,7 +376,7 @@ function init(){
   document.getElementById('productSelect').addEventListener('change', e=>{ state.product = e.target.value; setParamState(); render(); });
   document.getElementById('condSelect').addEventListener('change', e=>{ state.cond = e.target.value; setParamState(); render(); });
   document.getElementById('btnStart').addEventListener('click', ()=>{
-    state.page='quiz'; state.qIndex=0; state.answers={}; state.selected=null; state.note=''; state.log=[]; state.expressiveReasons=[];
+    state.page='quiz'; state.qIndex=0; state.answers={}; state.selected=null; state.expressiveReason=''; state.correctiveValues={}; state.recourseDone=false; state.log=[];
     setParamState(); log('start',{product:state.product, condition:state.cond}); render();
   });
   document.getElementById('quizClose').addEventListener('click', ()=>{ state.page='landing'; render(); });
@@ -354,7 +385,7 @@ function init(){
   document.getElementById('quizNext').addEventListener('click', ()=>{
     const total = products[state.product].questions.length;
     if(state.qIndex < total-1){ state.qIndex++; renderQuiz(); return; }
-    inferProfile(); recommend(state.inference); state.correctiveValues = {...state.inference}; state.page='results'; state.note=''; render();
+    inferProfile(); recommend(state.inference); state.correctiveValues = {...state.inference}; state.recourseDone = false; state.page='results'; render();
   });
   document.getElementById('btnContinue').addEventListener('click', ()=>{ log('continue',{selected:state.selected}); state.page='done'; render(); });
   document.getElementById('btnDownload').addEventListener('click', downloadLog);

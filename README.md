@@ -1,14 +1,13 @@
-# RS follow-up study demo (profile-based recourse)
+# RS follow-up study — profile-based recourse (v8)
 
-This package preserves the original inference-first recommender flow:
+Static HTML/CSS/JS demo that preserves the original study structure:
 
-1. One question per page
-2. A results modal that first shows **How we understood you**
-3. Recommendations shown underneath
-4. Post-recommendation recourse varies by condition
+- landing page
+- one-question-at-a-time quiz modal
+- results modal with inferred profile first
+- recommendation cards below
 
 ## Conditions
-
 Use the URL parameter `cond`:
 
 - `cond=none` → No recourse
@@ -19,12 +18,3 @@ Use `product=wine` or `product=usb`.
 
 Example:
 `app.html?product=wine&cond=corrective`
-
-## Run locally
-
-Open `app.html` in a browser, or run:
-
-```bash
-python3 -m http.server 8000
-# then open http://localhost:8000/app.html
-```

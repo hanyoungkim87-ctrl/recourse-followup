@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Recommender follow-up demo</title>
+  <title>Recommendations</title>
   <link rel="stylesheet" href="assets/css/style.css" />
 </head>
 <body>
@@ -27,7 +27,7 @@
             <option value="usb">USB</option>
           </select>
 
-          <label class="label" for="condSelect">Follow-up condition</label>
+          <label class="label" for="condSelect">Condition</label>
           <select id="condSelect" class="select">
             <option value="none">No recourse</option>
             <option value="expressive">Expressive recourse</option>
@@ -70,23 +70,31 @@
           <button class="icon-btn" id="resultsClose" aria-label="Close">×</button>
         </div>
         <div class="modal-body">
-          <div class="two-col">
-            <div class="explain" id="profileBox">
-              <div class="section-label">How we understood you</div>
-              <p id="profileSummary" class="reasoning"></p>
-              <div id="profileTags" class="tag-row"></div>
-              <div id="correctiveAnchor"></div>
-            </div>
+          <div class="explain" id="whyBox">
+            <h3>Why these recommendations?</h3>
+            <p id="profileSummary" class="reasoning"></p>
+            <div id="profileTags" class="tag-row"></div>
+            <p id="whyText" class="muted reasoning-sub"></p>
 
-            <div class="explain" id="whyBox">
-              <div class="section-label">Why these recommendations?</div>
-              <p id="whyText" class="reasoning"></p>
+            <div id="recourseBlock" class="recourse hidden">
+              <div class="recourse-q">
+                <div class="label">Question</div>
+                <div id="recourseQuestion" class="qtext"></div>
+              </div>
+
+              <div class="recourse-actions">
+                <button id="btnRecourseYes" class="btn btn-secondary">Yes, it looks right</button>
+                <button id="btnRecourseNo" class="btn btn-danger-outline">No</button>
+              </div>
+
+              <div id="recourseStatus" class="status hidden" role="status" aria-live="polite"></div>
+              <div id="expressivePanel" class="repair hidden"></div>
+              <div id="correctivePanel" class="repair hidden"></div>
             </div>
           </div>
 
           <div class="recs-wrap">
             <div id="recsGrid" class="recs"></div>
-            <div id="expressiveAnchor"></div>
           </div>
         </div>
         <div class="modal-footer">
